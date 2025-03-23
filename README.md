@@ -24,7 +24,6 @@ Este proyecto permite conectar los datos de Bsale a Power BI mediante scripts en
 
    ```
    git clone https://github.com/tuusuario/skinautica-bsale-powerbi.git
-
    ```
 
 2. Crear un entorno virtual:
