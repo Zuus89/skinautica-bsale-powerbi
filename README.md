@@ -73,8 +73,11 @@ This will:
 
 The downloaded data will be saved in the following directory:
 
+```
 data/document_types/
   └── document_types.csv  # Contains the document types data in CSV format
+```
+
 
 ### Example of Document Type Data
 
