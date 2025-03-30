@@ -45,6 +45,7 @@ while True:
             "first_name": client.get("firstName"),
             "last_name": client.get("lastName"),
             "email": client.get("email"),
+            "rut": client.get("code"),
         }
         client_data.append(client_info)
 
