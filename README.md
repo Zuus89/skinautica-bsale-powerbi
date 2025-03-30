@@ -328,6 +328,33 @@ else:
 ````
 **Note**: Similar scripts were created for **Products**, **Product Types**, **Users**, and **Variants**, and they all follow the same structure for downloading data from Bsale and saving them into separate CSV files.
 
+### Step 6: Update Fact Tables (Documents and Document Details)
+
+#### **Objective**:
+This script is designed to update the **fact tables** (`documentos.csv` and `document_details.csv`) by downloading new documents and their details from the Bsale API, appending them to the existing files.
+
+#### **How It Works**:
+1. **Download New Documents**:
+   - The script calculates the date range (from the last saved document date to the previous day).
+   - It fetches documents from the Bsale API, extracting essential details like document ID, emission date, total amount, client, etc.
+   - The new documents are appended to the `documentos.csv` file.
+
+2. **Download Document Details**:
+   - For each downloaded document, the script retrieves detailed information about each item (e.g., quantity, net unit value, tax amount).
+   - These details are saved in the `document_details.csv` file.
+   
+3. **Output**:
+   - Both the documents and their details are updated in their respective CSV files.
+   - The script also prints the number of records processed and provides a preview of the first 5 rows for verification.
+
+#### **Files**:
+- `update_documents.py` – Located in the `/scripts` folder.
+
+---
+
+This script ensures that the fact tables are up to date by regularly fetching new data from Bsale and appending it to the existing CSV files.
+
+
 ### Step 7: Data Schema Overview
 
 The data model for this project consists of both **fact tables** and **dimension tables**. The **fact tables** are:
