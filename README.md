@@ -328,7 +328,7 @@ else:
 ````
 **Note**: Similar scripts were created for **Products**, **Product Types**, **Users**, and **Variants**, and they all follow the same structure for downloading data from Bsale and saving them into separate CSV files.
 
-### Step 6: Update Fact Tables (Documents and Document Details)
+## Step 6: Update Fact Tables (Documents and Document Details)
 
 #### **Objective**:
 This script is designed to update the **fact tables** (`documentos.csv` and `document_details.csv`) by downloading new documents and their details from the Bsale API, appending them to the existing files.
@@ -355,7 +355,7 @@ This script is designed to update the **fact tables** (`documentos.csv` and `doc
 This script ensures that the fact tables are up to date by regularly fetching new data from Bsale and appending it to the existing CSV files.
 
 
-### Step 7: Data Schema Overview
+## Step 7: Data Schema Overview
 
 The data model for this project consists of both **fact tables** and **dimension tables**. The **fact tables** are:
 
