@@ -387,3 +387,163 @@ Here is the schema of the data model for the dashboard, showing how all tables a
 - **Clients** and **Users** provide information about the people involved in the transactions, which are linked to the documents.
 - The **Date** table is connected to the other tables using the `emission_date`, ensuring that time-based analysis is possible.
 
+## Step 8: Connection to Shopify and Data Download
+
+After completing the data extraction from Bsale, we moved on to connect with Shopify to gather online sales data from the Shopify store. This process involves using Shopify's GraphQL API to fetch order details, such as the total sales amount, number of orders, and other related information. The following steps outline how this was achieved:
+
+### **Shopify API Setup**:
+- We use Shopify's GraphQL API to query for order data.
+- The API is accessed by sending HTTP POST requests to the endpoint: `https://{SHOPIFY_STORE}/admin/api/2024-01/graphql.json`.
+- Access to the API is secured using an access token (`SHOPIFY_ACCESS_TOKEN`) that is stored in the `.env` file.
+
+### **Query Structure**:
+- The API query is constructed dynamically to include pagination, fetching the latest orders within a given date range (in this case, starting from January 1, 2023).
+- We filter out test orders and cancelled orders, focusing only on real transactions.
+
+### **Data Processing**:
+- The response from Shopify contains orders, including the total price of each order.
+- The data is processed to calculate the total sales amount for each day and the total number of orders.
+- We ensure that the data is in the correct timezone for Chile (`America/Santiago`), and then we accumulate sales per day.
+
+### **Saving the Data**:
+- The processed sales data is stored in a DataFrame and then exported to a CSV file.
+- The CSV file is saved in the `data/shopify_sales/` directory, and it's named `ventas_shopify.csv`.
+
+Here’s the script used to download the Shopify sales data and store it in a CSV file:
+
+```python
+import requests
+import json
+import os
+from dotenv import load_dotenv
+from datetime import datetime
+from zoneinfo import ZoneInfo
+import pandas as pd
+from collections import defaultdict
+
+# Load credentials
+load_dotenv(dotenv_path="config/.env")
+SHOPIFY_STORE = os.getenv("SHOPIFY_STORE")
+ACCESS_TOKEN = os.getenv("SHOPIFY_ACCESS_TOKEN")
+url = f"https://{SHOPIFY_STORE}/admin/api/2024-01/graphql.json"
+
+headers = {
+    "Content-Type": "application/json",
+    "X-Shopify-Access-Token": ACCESS_TOKEN
+}
+
+# Template for paginated query with date filter
+def build_query(cursor=None):
+    cursor_clause = f', after: "{cursor}"' if cursor else ""
+    return f"""
+    {{
+      orders(first: 100{cursor_clause}, query: "created_at:>=2023-01-01") {{
+        pageInfo {{
+          hasNextPage
+          endCursor
+        }}
+        edges {{
+          node {{
+            createdAt
+            cancelReason
+            test
+            currentTotalPriceSet {{
+              shopMoney {{
+                amount
+                currencyCode
+              }}
+            }}
+          }}
+        }}
+      }}
+    }}
+    """
+
+# Initialize structures
+ventas_por_dia = defaultdict(float)
+ordenes_por_dia = defaultdict(int)
+
+# Get all orders with pagination
+has_next_page = True
+cursor = None
+total_ordenes = 0
+
+while has_next_page:
+    query = build_query(cursor)
+    response = requests.post(url, headers=headers, json={"query": query})
+    res_data = response.json()
+
+    if "errors" in res_data:
+        print("❌ Error en consulta GraphQL:")
+        print(json.dumps(res_data, indent=2))
+        break
+
+    orders_data = res_data["data"]["orders"]
+    for order in orders_data["edges"]:
+        nodo = order["node"]
+
+        if nodo["test"] or nodo["cancelReason"] is not None:
+            continue
+
+        monto_venta = float(nodo["currentTotalPriceSet"]["shopMoney"]["amount"])
+        if monto_venta == 0:
+            continue
+
+        created_utc = datetime.fromisoformat(nodo["createdAt"].replace("Z", "")).replace(tzinfo=ZoneInfo("UTC"))
+        created_cl = created_utc.astimezone(ZoneInfo("America/Santiago"))
+        fecha_solo = created_cl.date()
+
+        ventas_por_dia[fecha_solo] += monto_venta
+        ordenes_por_dia[fecha_solo] += 1
+        total_ordenes += 1
+
+    # Move to next page
+    has_next_page = orders_data["pageInfo"]["hasNextPage"]
+    cursor = orders_data["pageInfo"]["endCursor"]
+
+print(f"\n📦 Total de órdenes procesadas: {total_ordenes}")
+
+# Create DataFrame
+data = [
+    {
+        "Fecha (CL)": fecha,
+        "Total Ventas ($)": round(ventas_por_dia[fecha], 2),
+        "Cantidad de Órdenes": ordenes_por_dia[fecha]
+    }
+    for fecha in sorted(ventas_por_dia)
+]
+
+df = pd.DataFrame(data)
+
+print("\n📊 Ventas reales por día (desde 2023-01-01):")
+print(df)
+
+# Create folder if not exists
+output_dir = os.path.join("data", "shopify_sales")
+os.makedirs(output_dir, exist_ok=True)
+
+# Save CSV
+csv_path = os.path.join(output_dir, "ventas_shopify.csv")
+df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+
+print(f"\n✅ CSV guardado en: {csv_path}")
+
+````
+
+### **Explanation**:
+
+- **Pagination Handling**:  
+  The `build_query` function is used to fetch the first 100 orders and then continue fetching additional pages if there are more than 100 orders. This is done by checking the `hasNextPage` field from the response and using the `endCursor` for pagination.
+
+- **Date Filter**:  
+  The query filters the orders created since January 1, 2023, using the `created_at` field in the query. This ensures that only relevant data is fetched from Shopify.
+
+- **Timezone Conversion**:  
+  The date is converted to the "America/Santiago" timezone to ensure that the sales data aligns with Chile's local time. The conversion uses the `ZoneInfo` library to handle time zone conversion from UTC to the local timezone.
+
+- **Sales Data**:  
+  The sales data is accumulated by day, with the total sales amount and the number of orders being calculated for each day. This is done by storing the sales totals and order counts in dictionaries where the keys are the dates.
+
+### **Where the Data is Saved**:
+The sales data is saved to a CSV file in the `data/shopify_sales/` folder. The file is named `ventas_shopify.csv`, which contains the total sales and order counts for each day.
+
