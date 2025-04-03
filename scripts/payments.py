@@ -47,7 +47,8 @@ while True:
             "amount": payment.get("amount"),
             "payment_method": payment.get("payment_type", {}).get("id"),
             "document_id": payment.get("document", {}).get("id"),
-            "client_id": payment.get("client", {}).get("id"),
+            "client_id": payment.get("user", {}).get("id"),
+            "state": payment.get("state", {}),
         }
         payments_data.append(payment_data)
 
