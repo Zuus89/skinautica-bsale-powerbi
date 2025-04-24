@@ -8,7 +8,7 @@ import pandas as pd
 from collections import defaultdict
 
 # Cargar credenciales
-load_dotenv(dotenv_path="config/.env")
+load_dotenv(dotenv_path=".env")
 SHOPIFY_STORE = os.getenv("SHOPIFY_STORE")
 ACCESS_TOKEN = os.getenv("SHOPIFY_ACCESS_TOKEN")
 url = f"https://{SHOPIFY_STORE}/admin/api/2024-01/graphql.json"

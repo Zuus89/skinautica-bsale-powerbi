@@ -1,0 +1,11 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "UpdateDocumentTimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

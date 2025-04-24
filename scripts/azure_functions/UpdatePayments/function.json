@@ -1,0 +1,11 @@
+{
+  "scriptFile": "__init__.py",
+  "bindings": [
+    {
+      "name": "UpdatePaymentTimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 6 30 * *"
+    }
+  ]
+}

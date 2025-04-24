@@ -1,6 +1,7 @@
 # Ignorar archivos privados y temporales
 data/
 config/.env
+scripts/azure_functions/local.settings.json
 __pycache__/
 *.pyc
 *.csv
